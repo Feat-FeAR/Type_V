@@ -1,18 +1,18 @@
 Attribute VB_Name = "Module_BC"
+
 Sub MakeBoxCool()
-'VBA code: Change Box Plot layout 
-'Suitable to be turned into Add-in
+'VBA code: Change Box Plot layout
 'NOTE: This version does handle secondary y-axis for negative values
 	
-	Dim AnyChartSelected As Object
-	Dim yAxisLabel As String
-	Dim AxisFlag As Integer
+	Dim MyChart As Object
+	Dim SeriesNum As Long
 	Dim FullColorCode As Long
 	Dim FullColorCodeComp As Long
 	Dim RedComp As Integer
 	Dim GreenComp As Integer
 	Dim BlueComp As Integer
-	Dim SeriesNum As Long
+	Dim yAxisLabel As String
+	Dim AxisFlag As Integer
 	Dim LineThickness As Double
 	Dim PointSize As Double
 	
@@ -22,15 +22,15 @@ Sub MakeBoxCool()
 	PointSize = 7
 	
 	'Check for chart selection
-	Set AnyChartSelected = ActiveWorkbook.ActiveChart
+	Set MyChart = ActiveWorkbook.ActiveChart
 	
-	If AnyChartSelected Is Nothing Then
+	If MyChart Is Nothing Then
 		MsgBox ("No chart selected!" & Chr(10) & Chr(13) & "The subroutine has been aborted"), vbExclamation, "Warning"
 		Exit Sub 'Stop any further execution of this Sub
 	End If
 	
 	'Count the number of series in the ActiveChart
-	SeriesNum = ActiveChart.SeriesCollection.Count
+	SeriesNum = MyChart.SeriesCollection.Count
 	
 	'Open the ColorPicker dialog box, applying the RGB color (200,0,0) as the default
 	'then store the selected color by editing the 50th color position
@@ -42,7 +42,7 @@ Sub MakeBoxCool()
 		Exit Sub 'Stop any further execution of this Sub if the user selected cancel
 	End If
 	
-	'Retrieve RGB components
+	'Retrieve RGB components: RGB(RedComp,GreenComp,BlueComp) = RedComp*(256^0) + GreenComp*(256^1) + BlueComp*(256^2)
 	RedComp = FullColorCode Mod 256
 	GreenComp = FullColorCode \ 256 Mod 256 'Operator \ is the integer-division-operator in VBA
 	BlueComp = FullColorCode \ 65536 Mod 256
@@ -54,7 +54,7 @@ Sub MakeBoxCool()
 	yAxisLabel = InputBox("Insert Y-axis label", "Y-axis label", "Y-Axis")
 	If Len(yAxisLabel) = 0 Then
 		MsgBox ("No string inserted!" & Chr(10) & Chr(13) & "The subroutine has been aborted"), vbExclamation, "Warning"
-		Exit Sub 'Stop any further execution of this Sub if the user selected cancel or inserted a 0-character string
+		Exit Sub 'Stop any further execution of this Sub in case of cancel or empty input
 	End If
 	
 	'----------------
@@ -62,7 +62,7 @@ Sub MakeBoxCool()
 	'----------------
 	
 	'Remove unwanted elements
-	With ActiveChart
+	With MyChart
 		.HasTitle = False 'Remove Title
 		.Axes(xlValue).HasMajorGridlines = False 'Remove Grid lines
 		.Axes(xlValue).HasMinorGridlines = False 'Remove Grid lines
@@ -72,7 +72,7 @@ Sub MakeBoxCool()
 	
 	'Change Box color
 	For i = 3 To 4
-		With ActiveChart.SeriesCollection(i).Format
+		With MyChart.SeriesCollection(i).Format
 			.Fill.Visible = msoFalse
 			.Line.ForeColor.RGB = FullColorCode
 			.Line.Weight = LineThickness
@@ -81,7 +81,7 @@ Sub MakeBoxCool()
 	
 	'Change Whisker color
 	For i = 1 To 2
-		With ActiveChart.SeriesCollection(2 * i).ErrorBars.Format.Line
+		With MyChart.SeriesCollection(2 * i).ErrorBars.Format.Line
 			.ForeColor.RGB = FullColorCode
 			.Weight = LineThickness
 		End With
@@ -89,7 +89,7 @@ Sub MakeBoxCool()
 	
 	'Change Mean Marker color
 	'NOTE: you have to format the line first, then the markers
-	With ActiveChart.SeriesCollection(5)
+	With MyChart.SeriesCollection(5)
 		.Format.Line.Visible = msoTrue
 		.Format.Line.Weight = LineThickness
 		.Format.Line.Visible = msoFalse
@@ -102,7 +102,7 @@ Sub MakeBoxCool()
 	'NOTE: If (SeriesNum > 5) outlier points are present
 	If SeriesNum > 5 Then
 		For i = 6 To SeriesNum
-			With ActiveChart.SeriesCollection(i)
+			With MyChart.SeriesCollection(i)
 				.Format.Line.Visible = msoTrue
 				.Format.Line.Weight = LineThickness
 				.Format.Line.Visible = msoFalse
@@ -117,28 +117,28 @@ Sub MakeBoxCool()
 	
 	'Check if a secondary y-axis is present for negative values
 	'NOTE: Values 1 and 2 can be used in place of Group Names xlPrimary and xlSecondary, respectively
-	If ActiveChart.Axes.Count = 3 Then
+	If MyChart.Axes.Count = 3 Then
 		AxisFlag = 2
 	End If
 	
 	'Axis Labels
-	With ActiveChart
+	With MyChart
 		.Axes(xlCategory, xlPrimary).HasTitle = False 'Remove x-axis Label
 		.Axes(xlValue, AxisFlag).HasTitle = True 'Add y-axis Label
 		.Axes(xlValue, AxisFlag).AxisTitle.Characters.Text = yAxisLabel 'y-axis Label name
 		.Axes(xlValue, AxisFlag).AxisTitle.Characters.Font.Size = 14 'y-axis Label size
 	End With
-	With ActiveChart.Axes(xlCategory, xlPrimary).TickLabels.Font 'x-axis Tick font
+	With MyChart.Axes(xlCategory, xlPrimary).TickLabels.Font 'x-axis Tick font
 		.Bold = msoTrue
 		.Size = 12
 	End With
-	With ActiveChart.Axes(xlValue, AxisFlag).TickLabels.Font 'y-axis Tick font
+	With MyChart.Axes(xlValue, AxisFlag).TickLabels.Font 'y-axis Tick font
 		.Bold = msoTrue
 		.Size = 10
 	End With
 	
 	'Axis Thickness and Color
-	With ActiveChart.Axes(xlCategory, xlPrimary).Format.Line
+	With MyChart.Axes(xlCategory, xlPrimary).Format.Line
 		.Visible = msoTrue
 		.Weight = LineThickness 'x-axis Thickness
 		.ForeColor.RGB = RGB(0, 0, 0) 'x-axis Color
@@ -146,7 +146,7 @@ Sub MakeBoxCool()
 		.ForeColor.Brightness = 0
 		.Transparency = 0
 	End With
-	With ActiveChart.Axes(xlValue, AxisFlag).Format.Line
+	With MyChart.Axes(xlValue, AxisFlag).Format.Line
 		.Visible = msoTrue
 		.Weight = LineThickness 'y-axis Thickness
 		.ForeColor.RGB = RGB(0, 0, 0) 'y-axis Color
@@ -157,7 +157,7 @@ Sub MakeBoxCool()
 	
 	If AxisFlag = 2 Then
 		'In the presence of negative data, swap primary and secondary y-axes (*see bottom note)
-		With ActiveChart
+		With MyChart
 			.SetElement (msoElementSecondaryCategoryAxisShow) 'Introduce secondary x-axis
 			.Axes(xlCategory, xlPrimary).Crosses = xlMaximum 'Move primary y-axis on the right
 			.Axes(xlCategory, xlSecondary).Crosses = xlAutomatic 'Move secondary y-axis on the left 

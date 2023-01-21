@@ -4,16 +4,17 @@ Option Explicit
 Sub PooledSD()
 'VBA code: Compute pooled standard deviation and effect size
 	
-	Dim selRange As Range	'Current selection will be used for output
-	Dim MyWS As Worksheet	'The ActiveSheet in the ActiveWorkbook
-	Dim MyCell As Range		'For-loop auxiliary variable
-	Dim rng1 As Range		'Group_1 containing-data range
-	Dim rng2 As Range		'Group_2 containing-data range
+	Dim selRange As Range		'Current selection will be used for output
+	Dim MyWS As Worksheet		'The ActiveSheet in the ActiveWorkbook
+	Dim MyCell As Range			'For-loop auxiliary variable
+	Dim ans As VbMsgBoxResult	'Overwriting MsgBox option
+	Dim rng1 As Range			'Group_1 containing-data range
+	Dim rng2 As Range			'Group_2 containing-data range
 	
-	Dim n1 As Integer		'Group_1 sample size (-1)
-	Dim n2 As Integer		'Group_2 sample size (-1)
-	Dim pSD As Double		'Pooled Standard Deviation (output)
-	Dim d As Double			'Cohen's d (output)
+	Dim n1 As Integer			'Group_1 sample size (-1)
+	Dim n2 As Integer			'Group_2 sample size (-1)
+	Dim pSD As Double			'Pooled Standard Deviation (output)
+	Dim d As Double				'Cohen's d (output)
 	
 	'Cell range selection check
 	If TypeName(Selection) = "Range" Then
@@ -30,15 +31,23 @@ Sub PooledSD()
 	'Check if the output range (a 5x2 grid) is empty or not
 	For Each MyCell In MyWS.Range(selRange.Cells(1, 1), selRange.Cells(5, 2))
 		If IsEmpty(MyCell) = False Then
-			MsgBox ("Output will overwrite existing data!" _
+			
+			ans = MsgBox("Output is going to overwrite existing data!" _
 			& vbNewLine _
-			& "Press Cancel in the next dialog window if this is not acceptable."), vbExclamation, "Warning"
-			Exit For
+			& "Press OK if this is acceptable.", vbOKCancel + vbQuestion, "Overwriting Cells...")
+			
+			If ans = vbOk Then
+				Exit For 'Go on...
+			Else
+				Exit Sub 'Abort
+			End If
+			
 		End If
 	Next MyCell
 	
 	'Error-Handling
-	On Error Resume Next 'Continue executing the code immediately after the statement that generated the error
+	On Error Resume Next
+	'Continue executing the code immediately after the statement that generated the error
 		
 		'InputBox for user-defined cell range
 		Set rng1 = Application.InputBox( _

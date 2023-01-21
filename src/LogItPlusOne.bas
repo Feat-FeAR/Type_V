@@ -13,52 +13,74 @@ Sub LogItPlusOne()
 	Dim val As Variant		'Cell value
 	Dim natural As Boolean	'Flag for natural base (e)
 	
-	'Put user Selection into a Range variable
-	Set selRange = Selection 'ActiveWorkbook.ActiveSheet implied
+	'Cell range selection check
+	If TypeName(Selection) = "Range" Then
+		'Put user Selection into a Range variable
+		Set selRange = Selection 'ActiveWorkbook.ActiveSheet implied
+	Else
+		MsgBox "Invalid selection!", vbOKOnly + vbExclamation, "Warning"
+		Exit Sub
+	End If
 	
 	r = selRange.Rows.Count    'Number of selected rows
 	c = selRange.Columns.Count 'Number of selected columns
+	
+	'InputBox for user-input log base
+	b = Application.InputBox( _
+		Prompt:="y = log(x+1)" & vbNewLine & vbNewLine & "Choose Logarithm Base", _
+		Title:="Logarithmic Transformation", _
+		Default:="e", _
+		Type:=1 + 2)
+	
+	'Cancel option returns Boolean False
+	If b = "False" Then Exit Sub
+	'NOTE: Using the String "False" in place of the Boolean False
+	'allows distinguishing between False and 0 !!
+	
+	'Special case - natural base
+	If b = "e" Then
+		natural = True
+		b = 2 'Assign a positive number !=1 just to pass the next If-statement with no Warnings
+	End If
+	
+	'Base Check
+	'NOTE: VBA doesn't short-circuit,
+	'but "Type Mismatch" can be easily avoided using Variant
+	If Len(b) = 0 Or b <= 0 Or b = 1 Or Not IsNumeric(b) Then
+		MsgBox "Invalid Logarithm Base" _
+			& vbNewLine _
+			& "The subroutine has been aborted", _
+			vbOKOnly + vbExclamation, "Warning"
+		Exit Sub 'Stop Sub execution in case of: empty input, non-numeric entry, b<=0, or b=1
+	End If
 	
 	'Make entries static to get rid of possible inner references
 	selRange.Copy
 	selRange.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone 'Paste Values
 	
-	'InputBox for user-input log base
-	b = InputBox("y = log(x+1)" _
-		& vbNewLine & vbNewLine _
-		& "Choose Logarithm Base", _
-		"Logarithmic Transformation", "e") 'Cancel option returns a zero-length string ("")
-	If b = "e" Then
-			natural = True
-			b = 2 'Assign a positive number !=1 just to get through the next If control statement without Warning
-	End If
-	
-	'Check the base - NOTE: Len(b)=0 is True in the case of both empty input and Cancel option
-	If Len(b) = 0 Or b <= 0 Or b = 1 Or Not IsNumeric(b) Then 'NOTE: VBA doesn't short-circuit, but "Type Mismatch" can be easily avoided using Variant
-			MsgBox ("Invalid Logarithm Base" _
-				& vbNewLine _
-				& "The subroutine has been aborted"), _
-				vbExclamation, "Warning"
-			Exit Sub 'Stop any further execution of this Sub in case of: Cancel option, empty input, non-numeric entry, b<=0, or b=1
-	End If
-	
 	'Log-transform values by overwriting
-	For i = 1 To r
+	For i = 1 To r '--For Each cell In selRange-- as an alternative, with --Dim cell As Range-- (no need for i,j,r,c)
 		For j = 1 To c
-			val = selRange.Cells(i, j).Value
-			If IsNumeric(val) Then
-				If val >= 0 Then
-					If natural Then
-						selRange.Cells(i, j).Value = Application.WorksheetFunction.Ln(val + 1) 'Application can be omitted
-					Else
-						selRange.Cells(i, j).Value = Application.WorksheetFunction.Log(val + 1, b)
-					End If
+			With selRange.Cells(i, j)
+				val = .Value
+				If IsEmpty(val) Then
+					.Value = ""
 				Else
-					selRange.Cells(i, j).Value = "#NUM!"
+					If IsNumeric(val) Then
+						If val >= 0 Then
+							If natural Then
+								.Value = Application.WorksheetFunction.Ln(val + 1) 'Application can be omitted
+							Else
+								.Value = Application.WorksheetFunction.Log(val + 1, b)
+							End If
+						Else
+							.Value = "#NUM!"
+						End If
+					Else
+						.Value = "#VALUE!"
+					End If
 				End If
-			Else
-				selRange.Cells(i, j).Value = "#VALUE!"
-			End If
+			End With
 		Next j
 	Next i
 
