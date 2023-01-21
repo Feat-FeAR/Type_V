@@ -15,33 +15,42 @@ Sub GetVersions()
 	Dim TestedWith As String
 	Dim RealStatsVer As String
 	
-	'Initial values
-	MyMacroVer = "4.0 - 15-Aug-2020"
-	TestedWith = "6.8.1"
+	Dim MyWB As Workbook
+	Dim MyWS As Worksheet
+	Dim MyCell As Range
 	
-	'To bypass the alert message when the temporary sheet is deleted
+	'Initialization
+	MyMacroVer = "4.1 - 17-Sep-2020"
+	TestedWith = "7.3"
+	
+	Set MyWB = ActiveWorkbook
+	MyWB.Worksheets.Add.Name = "Versions" 'Add a temporary worksheet
+	Set MyWS = MyWB.Worksheets("Versions")
+	Set MyCell = MyWS.Range("A1")
+	
+	'To bypass the alert message when the temporary sheet will be deleted
 	Application.DisplayAlerts = False 'Switch off the alert button
 	
-	Worksheets.Add.Name = "Versions"
-	Worksheets("Versions").Cells(1, 1).Formula = "=VER()"
+	MyCell.Formula = "=VER()"
 	'NOTE: Ver() is not a worksheet-functions available to VBA,
 	'so you can't directly use something like this:
 	'RealStatsVer = Application.WorksheetFunction.Ver()
 	
-	If IsError(Cells(1, 1).Value) = True Then
+	If IsError(MyCell.Value) = True Then
 		RealStatsVer = "NONE!"
 	Else
-		RealStatsVer = Cells(1, 1).Value
+		RealStatsVer = MyCell.Value
 	End If
 	
-	Worksheets("Versions").Delete
+	'Delete the temporary worksheet
+	MyWS.Delete
 	
 	'Restore the alert message
 	Application.DisplayAlerts = True 'Switch on the alert button
 	
-	MsgBox ("FeAR MacroSet version " & MyMacroVer & vbNewLine _
+	MsgBox "FeAR MacroSet version " & MyMacroVer & vbNewLine _
 	& "Tested with RealStats release " & TestedWith & vbNewLine & vbNewLine _
-	& "Installed RealStats release " & vbNewLine & RealStatsVer), _
-	vbInformation, "Version Info"
-
+	& "Installed RealStats release " & vbNewLine & RealStatsVer, _
+	vbOKOnly + vbInformation, "Version Info"
+	
 End Sub

@@ -10,8 +10,6 @@ Sub PooledSD()
 	Dim rng1 As Range		'Group_1 containing-data range
 	Dim rng2 As Range		'Group_2 containing-data range
 	
-	Dim var1 As Double		'Group_1 (sample) variance
-	Dim var2 As Double		'Group_2 (sample) variance
 	Dim n1 As Integer		'Group_1 sample size (-1)
 	Dim n2 As Integer		'Group_2 sample size (-1)
 	Dim pSD As Double		'Pooled Standard Deviation (output)
@@ -22,7 +20,8 @@ Sub PooledSD()
 		'Put the uppermost left cell of the current selection into a Range variable
 		Set selRange = Selection.Cells(1, 1) 'ActiveWorkbook.ActiveSheet implied
 	Else
-		MsgBox "Please select a range of cells before running this macro!"
+		MsgBox "Please select a cell (or range) before running this macro!", _
+		vbOKOnly + vbExclamation, "Warning"
 		Exit Sub
 	End If
 	
@@ -63,13 +62,12 @@ Sub PooledSD()
 	On Error GoTo 0
 	
 	'Compute Output
-	var1 = Application.WorksheetFunction.Var_S(rng1)
 	n1 = rng1.Count - 1
-	var2 = Application.WorksheetFunction.Var_S(rng2)
 	n2 = rng2.Count - 1
-	
-	pSD = Sqr((n1 * var1 + n2 * var2) / (n1 + n2))
-	d = Abs(Application.WorksheetFunction.Average(rng1) - Application.WorksheetFunction.Average(rng2)) / pSD
+	With Application.WorksheetFunction
+		pSD = Sqr((n1 * .Var_S(rng1) + n2 * .Var_S(rng2)) / (n1 + n2))
+		d = Abs(.Average(rng1) - .Average(rng2)) / pSD
+	End With
 	
 	'Print Output
 	selRange.Cells(1, 1).Value = "Effect Size Analysis (FeAR)"

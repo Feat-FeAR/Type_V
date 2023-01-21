@@ -1,20 +1,23 @@
 Attribute VB_Name = "Module_BC"
 Sub MakeBoxCool()
 'VBA code: Change Box Plot layout 
-'NOTE: This version does not handle secondary y-axis for negative values
+'Suitable to be turned into Add-in
+'NOTE: This version does handle secondary y-axis for negative values
 	
 	Dim AnyChartSelected As Object
 	Dim yAxisLabel As String
+	Dim AxisFlag As Integer
 	Dim FullColorCode As Long
-	Dim FullColorCodeComp As Long 'Comp for Complementary
-	Dim RedComp As Integer 'Comp for Component
+	Dim FullColorCodeComp As Long
+	Dim RedComp As Integer
 	Dim GreenComp As Integer
 	Dim BlueComp As Integer
 	Dim SeriesNum As Long
 	Dim LineThickness As Double
 	Dim PointSize As Double
 	
-	'Initial values
+	'Initialization
+	AxisFlag = 1
 	LineThickness = 1.5
 	PointSize = 7
 	
@@ -95,7 +98,7 @@ Sub MakeBoxCool()
 		.MarkerForegroundColor = FullColorCodeComp
 	End With
 	
-	'Change Outlier Marker color
+	'Change Outlier Marker Color
 	'NOTE: If (SeriesNum > 5) outlier points are present
 	If SeriesNum > 5 Then
 		For i = 6 To SeriesNum
@@ -110,18 +113,26 @@ Sub MakeBoxCool()
 		Next i
 	End If
 	
+	'Axes restyling
+	
+	'Check if a secondary y-axis is present for negative values
+	'NOTE: Values 1 and 2 can be used in place of Group Names xlPrimary and xlSecondary, respectively
+	If ActiveChart.Axes.Count = 3 Then
+		AxisFlag = 2
+	End If
+	
 	'Axis Labels
 	With ActiveChart
 		.Axes(xlCategory, xlPrimary).HasTitle = False 'Remove x-axis Label
-		.Axes(xlValue, xlPrimary).HasTitle = True 'Add y-axis Label
-		.Axes(xlValue, xlPrimary).AxisTitle.Characters.Text = yAxisLabel 'y-axis Label name
-		.Axes(xlValue, xlPrimary).AxisTitle.Characters.Font.Size = 14 'y-axis Label size
+		.Axes(xlValue, AxisFlag).HasTitle = True 'Add y-axis Label
+		.Axes(xlValue, AxisFlag).AxisTitle.Characters.Text = yAxisLabel 'y-axis Label name
+		.Axes(xlValue, AxisFlag).AxisTitle.Characters.Font.Size = 14 'y-axis Label size
 	End With
-	With ActiveChart.Axes(xlCategory).TickLabels.Font 'x-axis Tick font
+	With ActiveChart.Axes(xlCategory, xlPrimary).TickLabels.Font 'x-axis Tick font
 		.Bold = msoTrue
 		.Size = 12
 	End With
-	With ActiveChart.Axes(xlValue).TickLabels.Font 'y-axis Tick font
+	With ActiveChart.Axes(xlValue, AxisFlag).TickLabels.Font 'y-axis Tick font
 		.Bold = msoTrue
 		.Size = 10
 	End With
@@ -135,7 +146,7 @@ Sub MakeBoxCool()
 		.ForeColor.Brightness = 0
 		.Transparency = 0
 	End With
-	With ActiveChart.Axes(xlValue, xlPrimary).Format.Line
+	With ActiveChart.Axes(xlValue, AxisFlag).Format.Line
 		.Visible = msoTrue
 		.Weight = LineThickness 'y-axis Thickness
 		.ForeColor.RGB = RGB(0, 0, 0) 'y-axis Color
@@ -144,4 +155,32 @@ Sub MakeBoxCool()
 		.Transparency = 0
 	End With
 	
+	If AxisFlag = 2 Then
+		'In the presence of negative data, swap primary and secondary y-axes (*see bottom note)
+		With ActiveChart
+			.SetElement (msoElementSecondaryCategoryAxisShow) 'Introduce secondary x-axis
+			.Axes(xlCategory, xlPrimary).Crosses = xlMaximum 'Move primary y-axis on the right
+			.Axes(xlCategory, xlSecondary).Crosses = xlAutomatic 'Move secondary y-axis on the left 
+			.SetElement (msoElementSecondaryCategoryAxisNone) 'Remove secondary x-axis
+			.Axes(xlValue, xlPrimary).Format.Line.Visible = msoFalse 'Remove primary y-axis
+			.Axes(xlValue, xlPrimary).TickLabels.Font.Color = RGB(255, 255, 255) 'Whiten primary y-axis labels 
+		End With
+	End If
+	
 End Sub
+
+'NOTE:
+'To switch primary and secondary y-axes you have to temporarily introduce
+'the secondary x-axis (which Excel doesn't add by default).
+
+'Go to Chart menu > Chart Options > Axes tab, check the same option of
+'Secondary Category (X) Axis that is checked for Primary Category (X) Axis.
+
+'Double click the primary X axis (bottom of the chart) and on the Scale tab,
+'check Value (Y) Axis Crosses at Maximum Category.
+
+'Double click the secondary X axis (top of the chart) and on the Scale tab,
+'UN-check Value (Y) Axis Crosses at Maximum Category.
+
+'Go to Chart menu > Chart Options > Axes tab, UN-check the option of
+'Secondary Category (X) Axis that you selected above.
