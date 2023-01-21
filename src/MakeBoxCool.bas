@@ -1,32 +1,38 @@
 Attribute VB_Name = "Module_BC"
+Option Explicit	'Force explicit variable declaration
 
 Sub MakeBoxCool()
 'VBA code: Change Box Plot layout
 'NOTE: This version does handle secondary y-axis for negative values
 	
-	Dim MyChart As Object
-	Dim SeriesNum As Long
-	Dim FullColorCode As Long
-	Dim FullColorCodeComp As Long
-	Dim RedComp As Integer
-	Dim GreenComp As Integer
-	Dim BlueComp As Integer
-	Dim yAxisLabel As String
-	Dim AxisFlag As Integer
-	Dim LineThickness As Double
-	Dim PointSize As Double
+	Dim MyChart As Object			'User-selected chart
+	Dim SeriesNum As Integer		'Number of series in the chart
+	Dim FullColorCode As Long		'RGB color code (0-16,777,215)
+	Dim FullColorCodeComp As Long	'RGB complementary color code (0-16,777,215)
+	Dim RedComp As Integer			'Red component (0-255)
+	Dim GreenComp As Integer		'Green component (0-255)
+	Dim BlueComp As Integer			'Blue component (0-255)
+	Dim yAxisLabel As String		'User-defined y-axis label
+	Dim AxisFlag As Integer			'Auxiliary variable for axis selection
+	Dim LineThickness As Double		'Line Thickness
+	Dim PointSize As Double			'Mean marker and outlier size
+	Dim AxisSize As Double			'Y-axis Label size
+	Dim i As Integer				'For-loop auxiliary variable
 	
 	'Initialization
 	AxisFlag = 1
 	LineThickness = 1.5
 	PointSize = 7
+	AxisSize = 14
 	
 	'Check for chart selection
 	Set MyChart = ActiveWorkbook.ActiveChart
 	
+	'Chart selection check
 	If MyChart Is Nothing Then
-		MsgBox ("No chart selected!" & Chr(10) & Chr(13) & "The subroutine has been aborted"), vbExclamation, "Warning"
-		Exit Sub 'Stop any further execution of this Sub
+		MsgBox "No chart selected!" & vbNewLine _
+		& "The subroutine has been aborted", vbOKOnly + vbExclamation, "Warning"
+		Exit Sub 'Stop Sub execution
 	End If
 	
 	'Count the number of series in the ActiveChart
@@ -39,10 +45,12 @@ Sub MakeBoxCool()
 		'Set the variable FullColorCode equal to the value selected the DialogBox
 		FullColorCode = ActiveWorkbook.Colors(50)
 	Else
-		Exit Sub 'Stop any further execution of this Sub if the user selected cancel
+		Exit Sub 'Stop Sub execution if the user selected Cancel
 	End If
 	
-	'Retrieve RGB components: RGB(RedComp,GreenComp,BlueComp) = RedComp*(256^0) + GreenComp*(256^1) + BlueComp*(256^2)
+	'Retrieve RGB components:
+	'RGB(RedComp,GreenComp,BlueComp) =
+	'	RedComp*(256^0) + GreenComp*(256^1) + BlueComp*(256^2)
 	RedComp = FullColorCode Mod 256
 	GreenComp = FullColorCode \ 256 Mod 256 'Operator \ is the integer-division-operator in VBA
 	BlueComp = FullColorCode \ 65536 Mod 256
@@ -51,11 +59,14 @@ Sub MakeBoxCool()
 	FullColorCodeComp = RGB(Abs(RedComp - 150), Abs(GreenComp - 150), Abs(BlueComp - 150))
 	
 	'InputBox for user-defined y-axis label
-	yAxisLabel = InputBox("Insert Y-axis label", "Y-axis label", "Y-Axis")
-	If Len(yAxisLabel) = 0 Then
-		MsgBox ("No string inserted!" & Chr(10) & Chr(13) & "The subroutine has been aborted"), vbExclamation, "Warning"
-		Exit Sub 'Stop any further execution of this Sub in case of cancel or empty input
-	End If
+	yAxisLabel = Application.InputBox( _
+		Prompt:="Insert Y-axis label", _
+		Title:="Y-axis label", _
+		Default:="Y-Axis", _
+		Type:=2)
+	
+	'Cancel option returns Boolean False, here casted to String beacouse of initial Dim
+	If yAxisLabel = "False" Then Exit Sub
 	
 	'----------------
 	'Do the restyling
@@ -116,7 +127,8 @@ Sub MakeBoxCool()
 	'Axes restyling
 	
 	'Check if a secondary y-axis is present for negative values
-	'NOTE: Values 1 and 2 can be used in place of Group Names xlPrimary and xlSecondary, respectively
+	'NOTE: Values 1 and 2 can be used in place of Group Names xlPrimary and
+	'xlSecondary, respectively
 	If MyChart.Axes.Count = 3 Then
 		AxisFlag = 2
 	End If
@@ -126,15 +138,15 @@ Sub MakeBoxCool()
 		.Axes(xlCategory, xlPrimary).HasTitle = False 'Remove x-axis Label
 		.Axes(xlValue, AxisFlag).HasTitle = True 'Add y-axis Label
 		.Axes(xlValue, AxisFlag).AxisTitle.Characters.Text = yAxisLabel 'y-axis Label name
-		.Axes(xlValue, AxisFlag).AxisTitle.Characters.Font.Size = 14 'y-axis Label size
+		.Axes(xlValue, AxisFlag).AxisTitle.Characters.Font.Size = AxisSize 'y-axis Label size
 	End With
 	With MyChart.Axes(xlCategory, xlPrimary).TickLabels.Font 'x-axis Tick font
 		.Bold = msoTrue
-		.Size = 12
+		.Size = AxisSize - 2
 	End With
 	With MyChart.Axes(xlValue, AxisFlag).TickLabels.Font 'y-axis Tick font
 		.Bold = msoTrue
-		.Size = 10
+		.Size = AxisSize - 4
 	End With
 	
 	'Axis Thickness and Color
@@ -169,7 +181,7 @@ Sub MakeBoxCool()
 	
 End Sub
 
-'NOTE:
+'*NOTE:
 'To switch primary and secondary y-axes you have to temporarily introduce
 'the secondary x-axis (which Excel doesn't add by default).
 
